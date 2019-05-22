@@ -1,6 +1,7 @@
 import React from 'react';
 import { createStackNavigator, createBottomTabNavigator } from 'react-navigation';
 
+import MatchDetails from '../components/MatchDetails/MatchDetails'
 import HomeScreen from '../screens/HomeScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
@@ -24,6 +25,7 @@ AddMatchStack.navigationOptions = {
 
 const MatchesTableStack = createStackNavigator({
   List: MatchesTable,
+  Details: MatchDetails,
 });
 
 MatchesTableStack.navigationOptions = {

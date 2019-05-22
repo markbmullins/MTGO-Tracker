@@ -1,38 +1,30 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Input, CheckBox, Button } from 'react-native-elements';
-import _storeData from '../../utils/storeData';
 import { format } from 'date-fns';
+import _storeData from '../../utils/storeData';
+import colors from '../../constants/Colors.js';
 
-/*
- * TODO: Work on styling
- *
- */
 class MatchInputForm extends Component {
   state = {
     deck: '',
     opponentDeck: '',
     winGameOne: false,
     OTPGameOne: false,
+    drawGameOne: false,
     winGameTwo: false,
-    OTPGameTwo: null,
+    OTPGameTwo: false,
+    drawGameTwo: false,
     winGameThree: false,
     OTPGameThree: false,
+    drawGameThree: false,
     winMatch: false,
+    drawMatch: false,
     gameWins: 0,
     gameLosses: 0,
-    submitted: false,
-    selected: false
+    gameDraws: 0,
+    submitted: false
   };
-  // constructor(props) {
-  //   super(props);
-  // }
-  handleChange(event) {
-    // const _match = { ...match};
-    // // computed property syntax
-    // _match[event.target.name] = event.target.value;
-    // this.setState({ match: _match})
-  }
 
   clearForm() {
     this.textInput.clear();
@@ -49,101 +41,311 @@ class MatchInputForm extends Component {
       OTPGameThree: false,
       drawGameThree: false,
       winMatch: false,
+      drawMatch: false,
       gameWins: 0,
       gameLosses: 0,
-      submitted: false,
-      selected: false
+      gameDraws: 0,
+      submitted: false
     });
   }
 
   cleanUpMatchObj(match) {
-    if (match.winGameOne && match.winGameTwo) {
-      match.winGameThree = undefined;
-      match.OTPGameThree = undefined;
-      match.winMatch = true;
-      match.gameWins = 2;
-      match.gameLosses = 0;
+    const T = true;
+    const F = false;
+
+    let {
+      winGameOne,
+      drawGameOne,
+      OTPGameOne,
+      winGameTwo,
+      drawGameTwo,
+      OTPGameTwo,
+      winGameThree,
+      drawGameThree,
+      OTPGameThree,
+      winMatch,
+      drawMatch,
+      gameWins,
+      gameLosses,
+      gameDraws,
+      ...rest
+    } = match;
+
+    //Win game 1 & 2
+    if (winGameOne && winGameTwo) {
+      winGameThree = undefined;
+      OTPGameThree = undefined;
+      winMatch = T;
+      drawMatch = F;
+      gameWins = 2;
+      gameLosses = 0;
+      gameDraws = 0;
     }
-    if (match.winGameOne && match.winGameThree) {
-      match.winMatch = true;
-      match.gameWins = 2;
-      match.gameLosses = 1;
+
+    //Win game 1 & 3
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = T;
+      gameWins = 2;
+      gameLosses = 1;
     }
-    if (match.winGameTwo && match.winGameThree) {
-      match.winMatch = true;
-      match.gameWins = 2;
-      match.gameLosses = 1;
+
+    //Win game 2 & 3
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = T;
+      gameWins = 2;
+      gameLosses = 1;
     }
+
+    //Win game 1
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = F;
+      gameWins = 1;
+      gameLosses = 2;
+    }
+
+    //Win game 2
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = F;
+      gameWins = 1;
+      gameLosses = 2;
+    }
+
+    //Win game 3
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = F;
+      gameWins = 1;
+      gameLosses = 2;
+    }
+
+    //Win no games
+    if (winGameOne && winGameTwo && winGameThree) {
+      winMatch = F;
+      gameWins = 0;
+      gameLosses = 2;
+    }
+
+    //Game one end in draw
+    if (drawGameOne) {
+      winGameThree = undefined;
+      OTPGameThree = undefined;
+      winGameTwo = undefined;
+      OTPGameTwo = undefined;
+      winMatch = F;
+      drawMatch = T;
+      gameWins = 2;
+      gameLosses = 0;
+      gameDraws = 1;
+    }
+
+    //Game two end in draw & won game 1
+    if (drawGameTwo && winGameOne) {
+      winGameThree = undefined;
+      OTPGameThree = undefined;
+      winMatch = T;
+      drawMatch = F;
+      gameWins = 1;
+      gameLosses = 0;
+      gameDraws = 1;
+    }
+
+    //Game two end in draw & lost game 1
+    if (drawGameTwo && winGameOne) {
+      winGameThree = undefined;
+      OTPGameThree = undefined;
+      winMatch = F;
+      drawMatch = F;
+      gameWins = 0;
+      gameLosses = 1;
+      gameDraws = 1;
+    }
+
+    //Game Three end in draw & lost game 1 & won game 2
+    if (drawGameThree && winGameOne && winGameTwo) {
+      winMatch = F;
+      drawMatch = T;
+      gameWins = 1;
+      gameLosses = 1;
+      gameDraws = 1;
+    }
+
+    //Game Three end in draw & won game 1 & lost game 2
+    if (drawGameThree && winGameOne && winGameTwo) {
+      winMatch = F;
+      drawMatch = T;
+      gameWins = 1;
+      gameLosses = 1;
+      gameDraws = 1;
+    }
+
+    return {
+      winGameOne,
+      drawGameOne,
+      OTPGameOne,
+      winGameTwo,
+      drawGameTwo,
+      OTPGameTwo,
+      winGameThree,
+      drawGameThree,
+      OTPGameThree,
+      winMatch,
+      drawMatch,
+      gameWins,
+      gameLosses,
+      gameDraws,
+      ...rest
+    };
   }
 
   handleSubmit() {
-    const { submitted, selected, ...match } = this.state;
-    this.cleanUpMatchObj(match);
-    if (match !== null) {
-      _storeData(this.getNow(), JSON.stringify(match));
+    const { submitted, ...match } = this.state;
+    const cleanedUpmatch = this.cleanUpMatchObj(match);
+    if (cleanedUpmatch !== null) {
+      _storeData(this.getCurrentTime(), JSON.stringify(cleanedUpmatch));
     }
     this.clearForm();
   }
 
-  getNow() {
-    const date = format(new Date(), 'MM/DD h:mm aa');
-    return date;
+  getCurrentTime() {
+    return format(new Date(), 'MM/DD h:mm aa');
   }
-  renderGameThree(wonGameOne, wonGameTwo) {
-    const shouldRenderGameThree = wonGameOne !== wonGameTwo;
-    if (shouldRenderGameThree) {
+
+  buttonSelected(otp) {
+    return otp ? 'solid' : 'outline';
+  }
+
+  renderGameTwo(drewGameOne) {
+    const { winGameTwo, OTPGameTwo, drawGameTwo } = this.state;
+    const { titleText, container, buttonContainer, gameContainer } = styles;
+    const buttonSelected = this.buttonSelected;
+
+    if (!drewGameOne) {
       return (
-        <View>
-          <Text style={styles.titleText}>Game Three:</Text>
-          <View style={styles.container}>
-            <View style={styles.buttonContainer}>
+        <View style={gameContainer}>
+          <Text style={titleText}>Game Two:</Text>
+          <View style={container}>
+            <View style={buttonContainer}>
               <Button
                 title="On the Play"
                 raised
-                type={this.buttonSelected(this.state.OTPGameThree)}
-                onPress={() => this.setState({ OTPGameThree: true })}
+                selected
+                type={buttonSelected(OTPGameTwo)}
+                onPress={() => this.setState({ OTPGameTwo: true })}
               />
             </View>
-            <View style={styles.buttonContainer}>
+            <View style={buttonContainer}>
               <Button
                 title="On the Draw"
                 raised
-                type={this.buttonSelected(!this.state.OTPGameThree)}
-                onPress={() => this.setState({ OTPGameThree: false })}
+                selected
+                type={buttonSelected(!OTPGameTwo)}
+                onPress={() => this.setState({ OTPGameTwo: false })}
               />
             </View>
           </View>
-          <CheckBox
-            title="Win Game Three?"
-            checked={this.state.winGameThree}
-            onPress={() =>
-              this.setState({ winGameThree: !this.state.winGameThree })
-            }
-          />
-          <CheckBox
-            title="End in Draw?"
-            checked={this.state.drawGameThree}
-            onPress={() =>
-              this.setState({ drawGameThree: !this.state.drawGameThree })
-            }
-          />
+          {drawGameTwo ? (
+            false
+          ) : (
+            <CheckBox
+              title="Win Game Two?"
+              checked={winGameTwo}
+              onPress={() => this.setState({ winGameTwo: !winGameTwo })}
+            />
+          )}
+          {winGameTwo ? (
+            false
+          ) : (
+            <CheckBox
+              title="End in Draw?"
+              checked={drawGameTwo}
+              onPress={() =>
+                this.setState({
+                  drawGameTwo: !drawGameTwo
+                })
+              }
+            />
+          )}
         </View>
       );
     }
   }
 
-  buttonSelected(otp) {
-    if (otp === true) {
-      return 'solid';
+  renderGameThree(wonGameOne, wonGameTwo, drewGameOne, drewGameTwo) {
+    const shouldRenderGameThree =
+      wonGameOne !== wonGameTwo && !drewGameOne && !drewGameTwo;
+    const { winGameThree, OTPGameThree, drawGameThree } = this.state;
+    const { titleText, container, buttonContainer, gameContainer } = styles;
+    const buttonSelected = this.buttonSelected;
+
+    if (shouldRenderGameThree) {
+      return (
+        <View style={gameContainer}>
+          <Text style={titleText}>Game Three:</Text>
+          <View style={container}>
+            <View style={buttonContainer}>
+              <Button
+                title="On the Play"
+                raised
+                type={buttonSelected(OTPGameThree)}
+                onPress={() => this.setState({ OTPGameThree: true })}
+              />
+            </View>
+            <View style={buttonContainer}>
+              <Button
+                title="On the Draw"
+                raised
+                type={buttonSelected(!OTPGameThree)}
+                onPress={() => this.setState({ OTPGameThree: false })}
+              />
+            </View>
+          </View>
+
+          {drawGameThree ? (
+            false
+          ) : (
+            <CheckBox
+              title="Win Game Three?"
+              checked={winGameThree}
+              onPress={() => this.setState({ winGameThree: !winGameThree })}
+            />
+          )}
+
+          {winGameThree ? (
+            false
+          ) : (
+            <CheckBox
+              title="End in Draw?"
+              checked={drawGameThree}
+              onPress={() =>
+                this.setState({
+                  drawGameThree: drawGameThree
+                })
+              }
+            />
+          )}
+        </View>
+      );
     }
-    return 'outline';
   }
 
   render() {
+    const {
+      opponentDeck,
+      winGameOne,
+      OTPGameOne,
+      drawGameOne,
+      winGameTwo,
+      drawGameTwo,
+      submitted
+    } = this.state;
+    const { form, input, titleText, container, buttonContainer, gameContainer, decksContainer } = styles;
+    const buttonSelected = this.buttonSelected;
+    const handleSubmit = this.handleSubmit;
+
     return (
-      <View style={styles.form}>
+      <View style={form}>
+        <View style={decksContainer}>
         <Input
-          style={styles.input}
+          style={input}
           value={this.state.deck}
           onChangeText={deck => this.setState({ deck })}
           label="Your deck"
@@ -153,8 +355,8 @@ class MatchInputForm extends Component {
           }}
         />
         <Input
-          style={styles.input}
-          value={this.state.opponentDeck}
+          style={input}
+          value={opponentDeck}
           onChangeText={opponentDeck => this.setState({ opponentDeck })}
           label="Opponent's deck"
           placeholder="Enter the name of your opponent's deck"
@@ -162,85 +364,74 @@ class MatchInputForm extends Component {
             this.textInput = input;
           }}
         />
-        <View>
-          <Text style={styles.titleText}>Game One:</Text>
-          <View style={styles.container}>
-            <View style={styles.buttonContainer}>
+        </View>
+        <View style={gameContainer}>
+          <Text style={titleText}>Game One:</Text>
+          <View style={container}>
+            <View style={buttonContainer}>
               <Button
                 title="On the Play"
                 raised
                 selected
-                type={this.buttonSelected(this.state.OTPGameOne)}
+                type={buttonSelected(OTPGameOne)}
                 onPress={() => this.setState({ OTPGameOne: true })}
               />
             </View>
-            <View style={styles.buttonContainer}>
+            <View style={buttonContainer}>
               <Button
                 title="On the Draw"
                 raised
                 selected
-                type={this.buttonSelected(!this.state.OTPGameOne)}
+                type={buttonSelected(!OTPGameOne)}
                 onPress={() => this.setState({ OTPGameOne: false })}
               />
             </View>
           </View>
-          <CheckBox
-            title="Win Game One?"
-            checked={this.state.winGameOne}
-            onPress={() => {
-              this.setState({
-                winGameOne: !this.state.winGameOne,
-                OTPGameTwo: false
-              });
-            }}
-          />
+          {drawGameOne ? (
+            false
+          ) : (
+            <CheckBox
+              title="Win Game One?"
+              checked={winGameOne}
+              onPress={() => {
+                this.setState({
+                  winGameOne: !winGameOne,
+                  OTPGameTwo: false
+                });
+              }}
+            />
+          )}
+          {winGameOne ? (
+            false
+          ) : (
+            <CheckBox
+              title="End in Draw?"
+              checked={drawGameOne}
+              onPress={() =>
+                this.setState({
+                  drawGameOne: !drawGameOne
+                })
+              }
+            />
+          )}
         </View>
-        <View>
-          <Text style={styles.titleText}>Game Two:</Text>
-          <View style={styles.container}>
-            <View style={styles.buttonContainer}>
-              <Button
-                title="On the Play"
-                raised
-                selected
-                type={this.buttonSelected(this.state.OTPGameTwo)}
-                onPress={() => this.setState({ OTPGameTwo: true })}
-              />
-            </View>
-            <View style={styles.buttonContainer}>
-              <Button
-                title="On the Draw"
-                raised
-                selected
-                type={this.buttonSelected(!this.state.OTPGameTwo)}
-                onPress={() => this.setState({ OTPGameTwo: false })}
-              />
-            </View>
-          </View>
-          <CheckBox
-            title="Win Game Two?"
-            checked={this.state.winGameTwo}
-            onPress={() =>
-              this.setState({ winGameTwo: !this.state.winGameTwo })
-            }
-          />
-        </View>
-        {this.renderGameThree(this.state.winGameOne, this.state.winGameTwo)}
+        {this.renderGameTwo(drawGameOne)}
+        {this.renderGameThree(winGameOne, winGameTwo, drawGameOne, drawGameTwo)}
         <Button
           title="Submit"
           raised
           selected
-          type={this.buttonSelected(this.state.submitted)}
+          type={buttonSelected(submitted)}
           onPress={() => {
             this.setState({ submitted: true });
-            this.handleSubmit();
+            handleSubmit();
           }}
         />
       </View>
     );
   }
 }
-const width = '100%';
+
 const styles = StyleSheet.create({
   form: { flex: 1, padding: 10, marginTop: 30 },
   baseText: {},
@@ -250,7 +441,7 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 20,
     fontFamily: 'roboto-regular',
-    color: '#2089dc',
+    color: colors.headingColor,
     margin: 5
   },
   container: {
@@ -263,6 +454,13 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flex: 1,
     margin: 5
+  },
+  gameContainer: {
+    padding:1,
+  },
+  decksContainer: {
+    padding:1,
   }
 });
+
 export default MatchInputForm;

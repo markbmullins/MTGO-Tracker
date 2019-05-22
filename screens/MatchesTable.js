@@ -6,8 +6,9 @@ import { View, Text, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
 import { NavigationEvents } from 'react-navigation';
 import { AsyncStorage } from 'react-native';
-import { TouchableOpacity, Alert } from 'react-native';
+
 import { Table, TableWrapper, Row, Cell } from 'react-native-table-component';
+import TableComponent from '../components/TableComponent/TableComponent';
 
 export default class MatchesTable extends React.Component {
   static navigationOptions = {
@@ -17,15 +18,21 @@ export default class MatchesTable extends React.Component {
   state = {
     matches: [],
     headings: ['Deck', 'Opp Deck', 'Win Match', 'Time/Date'],
+    loading: false,
     dateSortDirection: 'descending',
     deckSortDirection: 'descending',
     winSortDirection: 'descending',
-    recordSortDirection: 'descending'
+    recordSortDirection: 'descending',
+
   };
 
   syncTable() {
+    this.setState({loading: true});
     _getAllData()
-      .then(response => this.setState({ matches: this.parseMatches(response) }))
+      .then(response => {
+        console.log('all match data: ', response);
+        this.setState({ matches: this.parseMatches(response), loading:false });
+      })
       .catch(err => console.log('err: ', err));
   }
 
@@ -57,93 +64,15 @@ export default class MatchesTable extends React.Component {
     );
   }
 
-  printWinLose(bool) {
-    return bool ? 'Win' : 'Lose';
-  }
-
-  printPlayDraw(bool) {
-    return bool ? 'Play' : 'Draw';
-  }
-
-  _alert(match) {
-    const {
-      deck,
-      opponentDeck,
-      winGameOne,
-      OTPGameOne,
-      winGameTwo,
-      OTPGameTwo,
-      winGameThree,
-      OTPGameThree,
-      winMatch,
-      gameWins,
-      gameLosses
-    } = match;
-
-    const w = this.printWinLose;
-    const p = this.printPlayDraw;
-    const decks = 'Deck: ' + deck + '\n' + 'Opp: ' + opponentDeck + '\n';
-    const record = 'Record: ' + gameWins + ' - ' + gameLosses + '\n';
-    const gameOne =
-      'G1:  ' + w(winGameOne) + '\n' + 'Play/Draw: ' + p(OTPGameOne) + '\n';
-    const gameTwo =
-      'G2:  ' + w(winGameTwo) + '\n' + 'Play/Draw: ' + p(OTPGameTwo) + '\n';
-    const gameThree =
-      'G3 ' + w(winGameThree) + '\n' + 'Play/Draw: ' + p(OTPGameThree);
-
-    let alert = decks + record + gameOne + gameTwo;
-    if (winGameThree !== undefined && OTPGameThree !== undefined)
-      alert += gameThree;
-
-    Alert.alert(alert);
-  }
-
   render() {
-    const { matches, deckSortDirection, headings } = this.state;
-    const element = data => (
-      <TouchableOpacity onPress={() => this._alert(data)}>
-        <View style={styles.btn}>
-          <Text style={styles.btnText}>Details</Text>
-        </View>
-      </TouchableOpacity>
-    );
+    const { matches, headings } = this.state;
+    const {...props} = this.props;
+    console.log('Props: ', this.props);
     return (
-      <View style={styles.container}>
+      <View>
         <NavigationEvents onWillFocus={() => this.syncTable()} />
         <ScrollView>
-          <Table borderStyle={{ borderColor: 'transparent' }}>
-            <Row data={headings} style={styles.head} textStyle={styles.text} />
-
-            {matches.map((match, index) => (
-              <TableWrapper key={index} style={styles.row}>
-                <Cell
-                  key={match.deck}
-                  data={match.deck}
-                  textStyle={styles.text}
-                />
-                <Cell
-                  key={match.opponentdeck}
-                  data={match.opponentDeck}
-                  textStyle={styles.text}
-                />
-                <Cell
-                  key={match.winMatch}
-                  data={match.winMatch ? 'Yes' : 'No'}
-                  textStyle={styles.text}
-                />
-                <Cell
-                  key={match.time}
-                  data={match.time}
-                  textStyle={styles.text}
-                />
-                <Cell
-                  key={index + 10}
-                  data={element(match)}
-                  textStyle={styles.text}
-                />
-              </TableWrapper>
-            ))}
-          </Table>
+        <TableComponent matches={matches} headings={headings} {...props}/>
         </ScrollView>
       </View>
     );
